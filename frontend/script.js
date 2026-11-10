@@ -125,7 +125,7 @@ function addMessage(content, type, sources = null, isWelcome = false) {
         html += `
             <details class="sources-collapsible">
                 <summary class="sources-header">Sources</summary>
-                <div class="sources-content">${sources.join(', ')}</div>
+                <div class="sources-content">${sources.map(renderSource).join(', ')}</div>
             </details>
         `;
     }
@@ -135,6 +135,14 @@ function addMessage(content, type, sources = null, isWelcome = false) {
     chatMessages.scrollTop = chatMessages.scrollHeight;
     
     return messageId;
+}
+
+// Render a source as a link to its lesson video (URL hidden in href), or plain text if no link
+function renderSource(source) {
+    const label = escapeHtml(source.label);
+    if (!source.url) return label;
+    const href = escapeHtml(source.url).replace(/"/g, '&quot;');
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
 }
 
 // Helper function to escape HTML for user messages
