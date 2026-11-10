@@ -3,7 +3,7 @@ name = "starting-codebase"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "chromadb==1.0.15",
     "anthropic==0.58.2",
@@ -12,4 +12,6 @@ dependencies = [
     "uvicorn==0.35.0",
     "python-multipart==0.0.20",
     "python-dotenv==1.1.1",
+    "torch==2.2.2 ; platform_machine == 'x86_64' and sys_platform == 'darwin'",
+    "numpy<2 ; platform_machine == 'x86_64' and sys_platform == 'darwin'",
 ]
