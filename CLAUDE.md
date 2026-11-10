@@ -4,11 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-Dependencies are managed with `uv` (Python 3.13+). Always use `uv` to run commands and manage packages — never `pip` directly.
+Dependencies are managed with `uv` (Python 3.13+). Always use `uv` to run Python and manage packages. Never call `python`, `python3` or `pip` directly.
 
 ```bash
 uv sync                                   # install dependencies
 uv add <package>                          # add a dependency
+uv run python <file>.py                   # run a Python file
 ./run.sh                                  # start the app (runs uvicorn from backend/)
 cd backend && uv run uvicorn app:app --reload --port 8000   # manual start
 ```
