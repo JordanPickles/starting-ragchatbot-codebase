@@ -125,7 +125,7 @@ function addMessage(content, type, sources = null, isWelcome = false) {
         html += `
             <details class="sources-collapsible">
                 <summary class="sources-header">Sources</summary>
-                <div class="sources-content">${sources.map(renderSource).join(', ')}</div>
+                <div class="sources-content">${sources.map(renderSource).join('')}</div>
             </details>
         `;
     }
@@ -137,12 +137,15 @@ function addMessage(content, type, sources = null, isWelcome = false) {
     return messageId;
 }
 
-// Render a source as a link to its lesson video (URL hidden in href), or plain text if no link
+// Render a source as a card: course name plus a lesson tag, linking to the lesson video when a URL exists
 function renderSource(source) {
-    const label = escapeHtml(source.label);
-    if (!source.url) return label;
+    const match = source.label.match(/^(.*) - (Lesson \d+)$/);
+    const course = escapeHtml(match ? match[1] : source.label);
+    const lesson = match ? `<span class="source-lesson">${escapeHtml(match[2])}</span>` : '';
+    const inner = `<span class="source-course">${course}</span>${lesson}`;
+    if (!source.url) return `<div class="source-item">${inner}</div>`;
     const href = escapeHtml(source.url).replace(/"/g, '&quot;');
-    return `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+    return `<a class="source-item" href="${href}" target="_blank" rel="noopener noreferrer">${inner}<span class="source-arrow" aria-hidden="true">↗</span></a>`;
 }
 
 // Helper function to escape HTML for user messages
