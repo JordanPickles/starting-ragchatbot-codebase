@@ -3,9 +3,11 @@ const API_URL = '/api';
 
 // Global state
 let currentSessionId = null;
+// Bumped on every "New Chat" so responses to queries from an older chat can be ignored
+let chatGeneration = 0;
 
 // DOM elements
-let chatMessages, chatInput, sendButton, totalCourses, courseTitles;
+let chatMessages, chatInput, sendButton, newChatButton, totalCourses, courseTitles;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -13,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chatMessages = document.getElementById('chatMessages');
     chatInput = document.getElementById('chatInput');
     sendButton = document.getElementById('sendButton');
+    newChatButton = document.getElementById('newChatButton');
     totalCourses = document.getElementById('totalCourses');
     courseTitles = document.getElementById('courseTitles');
     
@@ -28,8 +31,10 @@ function setupEventListeners() {
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
     });
-    
-    
+
+    // New chat
+    newChatButton.addEventListener('click', startNewChat);
+
     // Suggested questions
     document.querySelectorAll('.suggested-item').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -59,6 +64,8 @@ async function sendMessage() {
     chatMessages.appendChild(loadingMessage);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
+    const generation = chatGeneration;
+
     try {
         const response = await fetch(`${API_URL}/query`, {
             method: 'POST',
@@ -74,7 +81,14 @@ async function sendMessage() {
         if (!response.ok) throw new Error('Query failed');
 
         const data = await response.json();
-        
+
+        // The user started a new chat while this query was running: drop the answer,
+        // and delete the session it wrote to so it isn't left behind on the server
+        if (generation !== chatGeneration) {
+            deleteSession(data.session_id);
+            return;
+        }
+
         // Update session ID if new
         if (!currentSessionId) {
             currentSessionId = data.session_id;
@@ -85,14 +99,35 @@ async function sendMessage() {
         addMessage(data.answer, 'assistant', data.sources);
 
     } catch (error) {
+        if (generation !== chatGeneration) return;
         // Replace loading message with error
         loadingMessage.remove();
         addMessage(`Error: ${error.message}`, 'assistant');
     } finally {
-        chatInput.disabled = false;
-        sendButton.disabled = false;
-        chatInput.focus();
+        // startNewChat already re-enabled the input if the chat changed
+        if (generation === chatGeneration) {
+            chatInput.disabled = false;
+            sendButton.disabled = false;
+            chatInput.focus();
+        }
     }
+}
+
+// Start a fresh conversation: drop the old session on the server and reset the UI
+function startNewChat() {
+    chatGeneration++;
+    if (currentSessionId) deleteSession(currentSessionId);
+    createNewSession();
+    chatInput.value = '';
+    chatInput.disabled = false;
+    sendButton.disabled = false;
+    chatInput.focus();
+}
+
+// Fire-and-forget: the UI doesn't wait on the server to forget the session
+function deleteSession(sessionId) {
+    fetch(`${API_URL}/session/${encodeURIComponent(sessionId)}`, { method: 'DELETE' })
+        .catch(error => console.error('Error deleting session:', error));
 }
 
 function createLoadingMessage() {
